@@ -39,6 +39,8 @@
 #include "braids/signature_waveshaper.h"
 #include "braids/vco_jitter_source.h"
 #include "braids/ui.h"
+#include "braids/drivers/midi_io.h"
+#include "stmlib/midi/midi.h"
 
 using namespace braids;
 using namespace stmlib;
@@ -58,6 +60,7 @@ SignatureWaveshaper ws;
 System sys;
 VcoJitterSource jitter_source;
 Ui ui;
+MidiIO midi_io;
 
 int16_t render_buffer[kAudioBlockSize];
 uint8_t sync_buffer[kAudioBlockSize];
@@ -312,3 +315,4 @@ int main(void) {
     ui.DoEvents();
   }
 }
+
