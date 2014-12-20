@@ -30,8 +30,6 @@
 
 #include <algorithm>
 
-// #include "braids/multi.h"
-// #include "braids/storage_manager.h"
 
 namespace braids {
 

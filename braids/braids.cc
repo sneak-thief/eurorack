@@ -41,6 +41,9 @@
 #include "braids/ui.h"
 #include "braids/drivers/midi_io.h"
 #include "stmlib/midi/midi.h"
+#include "stmlib/utils/ring_buffer.h"
+
+#include "braids/midi_handler.h"
 
 using namespace braids;
 using namespace stmlib;
@@ -61,6 +64,7 @@ System sys;
 VcoJitterSource jitter_source;
 Ui ui;
 MidiIO midi_io;
+
 
 int16_t render_buffer[kAudioBlockSize];
 uint8_t sync_buffer[kAudioBlockSize];
@@ -308,6 +312,14 @@ void RenderBlock() {
 
 int main(void) {
   Init();
+
+
+  // Try to read some MIDI input if available.
+  if (midi_io.readable()) {
+    midi_handler.PushByte(midi_io.ImmediateRead());
+  }
+
+
   while (1) {
     while (audio_samples.writable() >= kAudioBlockSize) {
       RenderBlock();

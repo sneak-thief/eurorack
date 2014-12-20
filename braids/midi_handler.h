@@ -59,7 +59,11 @@ class MidiHandler {
   
   
   static uint8_t previous_packet_index_;
-  
+
+  static void PushByte(uint8_t byte) {
+    input_buffer_.Overwrite(byte);
+  }
+    
   static void ProcessInput() {
     while (input_buffer_.readable()) {
       parser_.PushByte(input_buffer_.ImmediateRead());
