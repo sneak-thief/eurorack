@@ -31,7 +31,7 @@
 #include <cstring>
 
 #include "stmlib/system/storage.h"
-#include "stmlib/utils/murmurhash3.h"
+// #include "stmlib/utils/murmurhash3.h"
 
 namespace braids {
 
@@ -63,7 +63,7 @@ const SettingsData kInitSettings = {
   50,
   15401,
   2048,
-  "GREETINGS FROM MUTABLE INSTRUMENTS *EDIT ME*",
+  "",
 };
 
 Storage<0x8020000, 4> storage;
@@ -72,23 +72,23 @@ void Settings::Init() {
   if (!storage.ParsimoniousLoad(&data_, &version_token_)) {
     memcpy(&data_, &kInitSettings, sizeof(SettingsData));
   }
-  CheckPaques();
+//  CheckPaques();
 }
 
 void Settings::Save() {
   storage.ParsimoniousSave(data_, &version_token_);
-  CheckPaques();
+//   CheckPaques();
 }
 
-void Settings::CheckPaques() {
-  uint32_t hash;
-  MurmurHash3_x86_32(
-      data_.marquee_text,
-      strlen(data_.marquee_text),
-      0xcab055ee,
-      &hash);
-  paques_ = hash == 0x3032935a;
-}
+// void Settings::CheckPaques() {
+//   uint32_t hash;
+//   MurmurHash3_x86_32(
+//       data_.marquee_text,
+//       strlen(data_.marquee_text),
+//       0xcab055ee,
+//       &hash);
+//   paques_ = hash == 0x3032935a;
+// }
 
 const char* const boolean_values[] = { "OFF ", "ON " };
 
