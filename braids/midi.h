@@ -29,6 +29,7 @@
 #ifndef STMLIB_MIDI_H_
 #define STMLIB_MIDI_H_
 
+#include "braids/drivers/display.h"
 
 namespace stmlib_midi {
 
@@ -42,6 +43,7 @@ class MidiStreamParser {
     expected_data_size_ = 0;
   }
   void PushByte(uint8_t byte) {
+//    ui.StepMarquee();
     // Active sensing messages are filtered at the source, the hard way...
     if (byte == 0xfe) {
       return;
@@ -78,9 +80,7 @@ class MidiStreamParser {
             }
             break;
         }
-      } else {
-        data_[data_size_++] = byte;
-      }
+}
       if (data_size_ >= expected_data_size_) {
         MessageReceived(running_status_);
         data_size_ = 0;
@@ -95,6 +95,8 @@ class MidiStreamParser {
  private:
   void MessageReceived(uint8_t status) {
     if (!status) {
+          Handler::NoteOn(1, 1, 1);
+
       Handler::BozoByte(data_[0]);
     }
 
@@ -103,7 +105,7 @@ class MidiStreamParser {
 
     // If this is a channel-specific message, check first that the receiver is
     // tuned to this channel.
-    if (hi != 0xf0 && !Handler::CheckChannel(lo)) {
+    if (hi != 0xf0) {
       Handler::RawMidiData(status, data_, data_size_, 0);
       return;
     }
@@ -111,41 +113,31 @@ class MidiStreamParser {
       Handler::RawMidiData(status, data_, data_size_, 1);
     }
     switch (hi) {
-//      case 0x80:
-//        Handler::NoteOff(lo, data_[0], data_[1]);
-//        break;
 
       case 0x90:
         if (data_[1]) {
           Handler::NoteOn(lo, data_[0], data_[1]);
         } else {
-//          Handler::NoteOff(lo, data_[0], 0);
         }
         break;
 
-//      case 0xa0:
-//        Handler::Aftertouch(lo, data_[0], data_[1]);
-//        break;
 
       case 0xb0:
         switch (data_[0]) {
-//          default:
+          default:
 //            Handler::ControlChange(lo, data_[0], data_[1]);
-//            break;
+            break;
         }
         break;
 
-//      case 0xc0:
+      case 0xc0:
 //        Handler::ProgramChange(lo, data_[0]);
-//        break;
+        break;
 
-//      case 0xd0:
-//        Handler::Aftertouch(lo, data_[0]);
-//        break;
 
-//      case 0xe0:
+      case 0xe0:
 //        Handler::PitchBend(lo, (static_cast<uint16_t>(data_[1]) << 7) + data_[0]);
-//        break;
+        break;
 
     }
   }
@@ -157,6 +149,9 @@ class MidiStreamParser {
 
   DISALLOW_COPY_AND_ASSIGN(MidiStreamParser);
 };
+
+
+
 
 }  // namespace stmlib_midi
 

@@ -1,4 +1,4 @@
-// Copyright 2012 Olivier Gillet.
+// Copyright 2013 Olivier Gillet.
 //
 // Author: Olivier Gillet (ol.gillet@gmail.com)
 //
@@ -26,11 +26,12 @@
 //
 // Driver for dumping log messages to the UART (TX pin).
 
-#ifndef BRAIDS_DRIVERS_MIDI_H_
-#define BRAIDS_DRIVERS_MIDI_H_
+#ifndef BRAIDS_DRIVERS_MIDI_IO_H_
+#define BRAIDS_DRIVERS_MIDI_IO_H_
+
+#include "stmlib/stmlib.h"
 
 #include <stm32f10x_conf.h>
-#include "stmlib/stmlib.h"
 
 namespace braids {
 
@@ -64,4 +65,4 @@ class MidiIO {
 
 }  // namespace braids
 
-#endif  // BRAIDS_DRIVERS_MIDI_H_
+#endif  // BRAIDS_DRIVERS_MIDI_IO_H_

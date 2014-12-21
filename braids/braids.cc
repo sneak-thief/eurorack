@@ -31,7 +31,7 @@
 
 #include "braids/drivers/adc.h"
 #include "braids/drivers/dac.h"
-#include "braids/drivers/debug_pin.h"
+// #include "braids/drivers/debug_pin.h"
 #include "braids/drivers/gate_input.h"
 #include "braids/drivers/system.h"
 #include "braids/envelope.h"
@@ -40,7 +40,7 @@
 #include "braids/vco_jitter_source.h"
 #include "braids/ui.h"
 #include "braids/drivers/midi_io.h"
-#include "stmlib/midi/midi.h"
+#include "braids/midi.h"
 #include "stmlib/utils/ring_buffer.h"
 
 #include "braids/midi_handler.h"
@@ -57,7 +57,6 @@ MacroOscillator osc;
 Envelope envelope;
 Adc adc;
 Dac dac;
-DebugPin debug_pin;
 GateInput gate_input;
 SignatureWaveshaper ws;
 System sys;
@@ -69,9 +68,12 @@ MidiIO midi_io;
 int16_t render_buffer[kAudioBlockSize];
 uint8_t sync_buffer[kAudioBlockSize];
 
+bool braids::midi_trigger_detected_flag;
 bool trigger_detected_flag;
 volatile bool trigger_flag;
+volatile bool trigger_flag2 = braids::midi_trigger_detected_flag;
 uint16_t trigger_delay;
+uint16_t braids::midi_rx;
 
 extern "C" {
   
@@ -81,7 +83,6 @@ void BusFault_Handler(void) { while (1); }
 void UsageFault_Handler(void) { while (1); }
 void NMI_Handler(void) { }
 void SVC_Handler(void) { }
-void DebugMon_Handler(void) { }
 void PendSV_Handler(void) { }
 
 }
@@ -91,8 +92,15 @@ extern "C" {
 void SysTick_Handler() {
   system_clock.Tick();  // Tick global ms counter.
   ui.Poll();
+
 }
 
+  // Try to read some MIDI input if available.
+  if (midi_io.readable()) {
+    midi_handler.PushByte(midi_io.ImmediateRead());
+    ui.StepMarquee();
+  }
+  
 void TIM1_UP_IRQHandler(void) {
   if (TIM_GetITStatus(TIM1, TIM_IT_Update) == RESET) {
     return;
@@ -133,12 +141,13 @@ void Init() {
   system_clock.Init();
   adc.Init(false);
   gate_input.Init();
-  debug_pin.Init();
   dac.Init();
   osc.Init();
   audio_samples.Init();
   sync_samples.Init();
-  
+  midi_io.Init();
+  midi_handler.Init();
+
   for (uint16_t i = 0; i < kAudioBufferSize / 2; ++i) {
     audio_samples.Overwrite(0);
     sync_samples.Overwrite(0);
@@ -184,7 +193,7 @@ void RenderBlock() {
   static int32_t previous_pitch = 0;
   static int32_t previous_shape = 0;
 
-  debug_pin.High();
+//   debug_pin.High();
   
   const TrigStrikeSettings& trig_strike = \
       trig_strike_settings[settings.GetValue(SETTING_TRIG_AD_SHAPE)];
@@ -194,9 +203,7 @@ void RenderBlock() {
       ? trig_strike.amount
       : 0;
   
-  if (ui.paques()) {
-    osc.set_shape(MACRO_OSC_SHAPE_QUESTION_MARK);
-  } else if (settings.meta_modulation()) {
+ if (settings.meta_modulation()) {
     int32_t shape = adc.channel(3);
     shape -= settings.data().fm_cv_offset;
     if (shape > previous_shape + 2 || shape < previous_shape - 2) {
@@ -244,9 +251,14 @@ void RenderBlock() {
   if (!settings.meta_modulation()) {
     pitch += settings.adc_to_fm(adc.channel(3));
   }
+
+
+
   
   // Check if the pitch has changed to cause an auto-retrigger
   int32_t pitch_delta = pitch - previous_pitch;
+
+
   if (settings.data().auto_trig &&
       (pitch_delta >= 0x40 || -pitch_delta >= 0x40)) {
     trigger_detected_flag = true;
@@ -271,13 +283,19 @@ void RenderBlock() {
     pitch = Interpolate88(lut_vco_detune, pitch << 2);
   }
 
+//  osc.set_pitch(braids::midi_rx);
+
   osc.set_pitch(pitch + settings.pitch_transposition());
 
-  if (trigger_flag) {
+//  osc.set_pitch(pitch + settings.pitch_transposition() + midi_rx);
+
+
+  if (trigger_flag || braids::midi_trigger_detected_flag) {
     osc.Strike();
     envelope.Trigger(ENV_SEGMENT_ATTACK);
     ui.StepMarquee();
     trigger_flag = false;
+    braids::midi_trigger_detected_flag = false;
   }
   
   if (settings.GetValue(SETTING_TRIG_DESTINATION) == 0) {
@@ -307,7 +325,7 @@ void RenderBlock() {
     sample = static_cast<int32_t>(sample) * gain >> 16;
     audio_samples.Overwrite(sample + 32768);
   }
-  debug_pin.Low();
+//   debug_pin.Low();
 }
 
 int main(void) {
@@ -316,15 +334,25 @@ int main(void) {
 
   // Try to read some MIDI input if available.
   if (midi_io.readable()) {
+
+    ui.StepMarquee();
     midi_handler.PushByte(midi_io.ImmediateRead());
+
   }
 
+ midi_handler.ProcessInput();
+
+if (braids::midi_trigger_detected_flag) {
+    ui.StepMarquee();
+}
 
   while (1) {
     while (audio_samples.writable() >= kAudioBlockSize) {
       RenderBlock();
     }
     ui.DoEvents();
+    midi_handler.ProcessInput();
+
   }
 }
 

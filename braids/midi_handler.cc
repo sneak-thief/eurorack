@@ -27,6 +27,7 @@
 // MIDI event handler.
 
 #include "braids/midi_handler.h"
+// #include "braids/ui.h"
 
 #include <algorithm>
 
@@ -39,6 +40,8 @@ using namespace std;
 MidiHandler::MidiBuffer MidiHandler::input_buffer_; 
 
 
+/* static */
+uint8_t MidiHandler::previous_packet_index_;
 
 /* static */
 stmlib_midi::MidiStreamParser<MidiHandler> MidiHandler::parser_;
@@ -46,7 +49,15 @@ stmlib_midi::MidiStreamParser<MidiHandler> MidiHandler::parser_;
 /* static */
 void MidiHandler::Init() {
   input_buffer_.Init();
+  previous_packet_index_ = 0;
+
 }
+
+/* static */
+MidiHandler::MidiBuffer MidiHandler::output_buffer_;
+
+/* static */
+MidiHandler::SmallMidiBuffer MidiHandler::high_priority_output_buffer_;
 
 
 /* extern */

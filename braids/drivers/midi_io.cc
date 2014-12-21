@@ -1,4 +1,4 @@
-// Copyright 2012 Olivier Gillet.
+// Copyright 2013 Olivier Gillet.
 //
 // Author: Olivier Gillet (ol.gillet@gmail.com)
 //
@@ -28,7 +28,7 @@
 
 #include "braids/drivers/midi_io.h"
 
-#include <string.h>
+#include <stm32f10x_conf.h>
 
 namespace braids {
 
@@ -58,4 +58,5 @@ void MidiIO::Init() {
   USART_Init(USART1, &usart_init);
   USART_Cmd(USART1, ENABLE);
 }
+
 }  // namespace braids
